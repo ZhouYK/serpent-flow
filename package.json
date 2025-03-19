@@ -1,5 +1,5 @@
 {
-  "name": "serpent",
+  "name": "serpent-flow",
   "version": "1.0.0",
   "description": "react form solver",
   "main": "./cjs/index.js",
