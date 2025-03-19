@@ -289,10 +289,11 @@ const useNode = <V>(
   };
 
   // （visible 引起的） 或者 （组件本身卸载引起的） 节点卸载只能走这个方法
-  const visibleOrUnmountNodeDetach = (off = true) => {
-    nodeDetach();
-    if (off) {
-      // 卸载过后，解绑所有监听
+  const visibleOrUnmountNodeDetach = () => {
+    const { preserve } = node.instance.state;
+    if (!preserve) {
+      nodeDetach();
+      // 不保留状态则解绑所有监听
       unsubscribe([node.instance.model]);
       unsubscribe([node.status]);
     }
@@ -463,7 +464,7 @@ const useNode = <V>(
   useEffect(() => {
     // state 控制显示/隐藏
     if (!state?.visible) {
-      visibleOrUnmountNodeDetach(false);
+      visibleOrUnmountNodeDetach();
       return;
     }
     nodePush();
