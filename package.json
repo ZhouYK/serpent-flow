@@ -1,6 +1,6 @@
 {
   "name": "serpent-flow",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "react form solver",
   "main": "./cjs/index.js",
   "module": "./es/index.js",
