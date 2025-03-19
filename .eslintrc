@@ -1,0 +1,74 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": false
+    },
+    "useJSXTextNode": true,
+    "project": "./tsconfig.json",
+    "tsconfigRootDir": "./"
+  },
+  "settings": {
+	"import/resolver": {
+	  "node": {
+		"extensions": [".ts", ".tsx", ".js", ".jsx", ".d.ts"]
+	  }
+	},
+	"react": {
+	  "version": "detect"
+	}
+  },
+  "env": {
+    "jest/globals": true
+  },
+  "globals": {
+    "window": false,
+    "document": false
+  },
+  "plugins": ["@typescript-eslint", "react-hooks", "react", "jest"],
+  "extends": [
+    "airbnb-base",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:react/recommended",
+    "plugin:jest/recommended"
+  ],
+  "rules": {
+    "no-use-before-define": 0,
+    "no-lone-blocks": 0,
+    "no-param-reassign": 0,
+    "no-shadow": 0,
+    "no-console": 0,
+    "no-continue": "off",
+    "no-underscore-dangle": "off",
+    "func-names": 0,
+    "camelcase": "off",
+    "class-methods-use-this": "off",
+    "arrow-body-style": "off",
+    "prefer-destructuring": "off",
+    "max-len": ["error", { "code": 1000 }],
+    "array-callback-return": "off",
+    "prefer-promise-reject-errors": "off",
+    "no-unused-expressions": "off",
+    "import/no-extraneous-dependencies": "off",
+    "import/extensions": "off",
+    "import/prefer-default-export": 0,
+    "react/display-name": 0,
+    "react/no-find-dom-node": 0,
+    "react/no-direct-mutation-state": 0,
+    "react/prop-types": "off",
+    "react/jsx-uses-react": "off",
+    "react/react-in-jsx-scope": "off",
+    "@typescript-eslint/camelcase": 0,
+    "@typescript-eslint/no-empty-interface": 0,
+    "@typescript-eslint/indent": 0,
+    "@typescript-eslint/no-unused-vars": 0,
+    "@typescript-eslint/no-namespace": 0,
+    "@typescript-eslint/explicit-function-return-type": 0,
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/explicit-member-accessibility": "off",
+    "@typescript-eslint/ban-ts-ignore": "off",
+    "@typescript-eslint/ban-ts-comment": "off",
+    "@typescript-eslint/explicit-module-boundary-types": "off"
+  }
+
+}
