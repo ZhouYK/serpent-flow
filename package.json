@@ -2,14 +2,14 @@
   "name": "serpent-flow",
   "version": "1.0.1",
   "description": "react form solver",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/es/index.js",
-  "unpkg": "./dist/umd/index.js",
-  "types": "./dist/es/index.d.ts",
+  "main": "./cjs/index.js",
+  "module": "./es/index.js",
+  "unpkg": "./dist/index.js",
+  "types": "./es/index.d.ts",
   "scripts": {
     "umd": "cross-env NODE_ENV=production webpack --env prod --config  ./webpack/webpack.config.babel.js",
-    "tsc:es": "tsc --project tsconfig/tsconfig.es.json",
-    "tsc:cjs": "tsc --project tsconfig/tsconfig.cjs.json",
+    "tsc:es": "rm -rf ./es && tsc --project tsconfig/tsconfig.es.json",
+    "tsc:cjs": "rm -rf ./cjs && tsc --project tsconfig/tsconfig.cjs.json",
     "build": "npm run umd && npm run tsc:es && npm run tsc:cjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -86,9 +86,9 @@
     "webpack-dev-server": "4.3.1"
   },
   "files": [
-    "dist/es",
-    "dist/cjs",
-    "dist/umd",
+    "es",
+    "cjs",
+    "dist",
     "package.json"
   ]
 }

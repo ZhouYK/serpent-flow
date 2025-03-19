@@ -6,7 +6,7 @@
     "jsx": "react",
     "declaration": true,
     "sourceMap": true,
-    "outDir": "../dist/es",
+    "outDir": "../es",
     "rootDir": "../src",
     "strict": false,
     "moduleResolution": "node",
@@ -15,5 +15,5 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": ["../src"],
-  "exclude": ["../node_modules", "../dist"]
+  "exclude": ["../node_modules", "../cjs", "../es", "../umd"]
 }

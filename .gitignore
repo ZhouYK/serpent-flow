@@ -7,3 +7,5 @@ dist/
 coverage/
 ts/
 */**/*.js
+es/
+cjs
