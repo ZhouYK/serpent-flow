@@ -1,29 +1,14 @@
 import {
+  glue, GlueConflictPolicy, mergeCurToPre, runtimeVar, useDerivedState, useDerivedStateWithModel, useUpdateEffect,
+} from 'femo';
+import {
   useCallback, useContext, useEffect, useRef, useState,
 } from 'react';
 
-import {
-  glue,
-  GlueConflictPolicy,
-  mergeCurToPre,
-  runtimeVar,
-  unsubscribe,
-  useDerivedState,
-  useDerivedStateWithModel,
-  useUpdateEffect,
-} from 'femo';
-
 import { defaultState } from '../../config';
-import type {
-  ErrorInfo,
-  FieldProps,
-  FieldState,
-  FNode,
-  FormState,
-  NodeStateMap,
-  NodeType,
+import {
+  ErrorInfo, FieldProps, FieldState, FNode, FormState, NodeStateMap, NodeStatusEnum, NodeType, SearchAction, ValidateStatus,
 } from '../../interface';
-import { NodeStatusEnum, SearchAction, ValidateStatus } from '../../interface';
 import NodeContext from '../../NodeProvider/NodeContext';
 import instanceHelper from '../../utils/instanceHelper';
 import nodeHelper from '../../utils/nodeHelper';
@@ -46,8 +31,6 @@ const useNode = <V>(
   const controlledKeysRef = useRef<Set<string>>();
   controlledKeysRef.current = new Set(Object.keys(initState));
 
-  const firstRenderRef = useRef(true);
-  const listenersRef = useRef([]);
   const reducerRef = useRef(null);
   const nodeRef = useRef<FNode<FieldState<V>>>(null);
 
@@ -183,6 +166,12 @@ const useNode = <V>(
   // 还需要注意，这里的 parentNode 应该向上寻找第一个非匿名节点或者全是匿名节点的情况下找最顶层节点。
   const findSameNameSiblingNode = (n: string) => nodeHelper.findFieldNodes(validParentNode, [n]);
 
+  const [existNode] = useDerivedState(() => {
+    const existNodes = findSameNameSiblingNode(name);
+    // 同名的节点永远只有一个，直接返回
+    return existNodes?.[0];
+  }, [name]);
+
   const [node] = useState<FNode<NodeStateMap<V>[typeof type]>>(() => {
     nodeId += 1;
     // 节点查询
@@ -193,33 +182,32 @@ const useNode = <V>(
       id: `node_${nodeId}`,
       type,
       name: initState.name,
-      status: glue<NodeStatusEnum>((s) => {
-        // 如果节点是卸载状态，则不执行更新
-        // 节点卸载时，可能是 visible false 引起的，此时节点上面的监听此时并没有卸载
-        if (
-          !nodeRef?.current?.instance?.state?.visible
-          && nodeRef?.current?.status?.() === NodeStatusEnum.unmount
-        ) {
-          return nodeRef.current?.status();
-        }
-        return s;
-      }, NodeStatusEnum.init),
+      status: glue<NodeStatusEnum>(NodeStatusEnum.init),
       valueType: initState.valueType || nodeHelper.getDefaultValueType(type),
       instance: insRef.current,
       pushChild: (f: FNode) => {
+        if (node.status() === NodeStatusEnum.mount) return;
         nodeHelper.chainChildNode(f, node);
       },
       detach: () => {
         nodeHelper.cutNode(node);
       },
       validateModel: glue(null),
+      mountedBy: 0,
     };
+
+    // 有存在的节点直接返回
+    if (existNode) {
+      return existNode;
+    }
+
     if (field) {
       // field 的中的 status 要保留，因为涉及到查找时 context node 挂载/卸载的通知
       const { status, ...rest } = tmpNode;
       Object.assign(field, rest);
       return field;
     }
+
     return tmpNode;
   });
 
@@ -228,13 +216,6 @@ const useNode = <V>(
 
   // 在 instance 中保存 node 的引用
   insRef.current.node = node;
-  // 每个调用了 node.detach 的地方都应该调用一次该方法
-  const resetSameNameNodeListeners = useCallback(() => {
-    listenersRef.current.forEach((fn) => {
-      fn?.();
-    });
-    listenersRef.current = [];
-  }, []);
 
   // 通知使用该 node 的地方，更新其他地方获得的 node 的引用
   const noticeNodeConsumeSubscriber = (action: SearchAction) => {
@@ -272,78 +253,28 @@ const useNode = <V>(
     }
   };
 
-  const pushChild = () => {
+  // 一切 node 挂载的操作都在这里，包括通知和绑定监听
+  const pushChild = (action: SearchAction) => {
     parentNode?.pushChild(node);
     node.status.race(NodeStatusEnum.mount);
     // 每次挂载 node 过后，都往上寻找需要该节点的 context node，并执行触发 rerender 的动作
-    noticeNodeConsumeSubscriber(SearchAction.node_position_change);
-    if (nodeHelper.isAnonymous(node.name)) return;
-    dealWithSameNameNode(node.name);
+    noticeNodeConsumeSubscriber(action);
   };
 
   const nodeDetach = () => {
     node.detach();
     // 先通知
     node.status.race(NodeStatusEnum.unmount);
-    resetSameNameNodeListeners();
   };
 
   // （visible 引起的） 或者 （组件本身卸载引起的） 节点卸载只能走这个方法
   const visibleOrUnmountNodeDetach = () => {
-    const { preserve } = node.instance.state;
+    const { preserve } = node?.instance?.state || {};
     if (!preserve) {
       nodeDetach();
-      // 不保留状态则解绑所有监听
-      unsubscribe([node.instance.model]);
-      unsubscribe([node.status]);
-    }
-  };
-
-  const nodePush = () => {
-    // 出现 unmount 节点只可能有两种可能：
-    // 1. 组件节点卸载 2. visible 为 false
-    // 情况 1，unmount 的节点不会在一个组件里面出现，因为组件已经卸载了，不存在执行环境了
-    // 情况 2，unmount 的节点则可能出现在同一个组件中，当组件 visible 变为 true 时，则会重入节点。
-    // 下面的情况属于 情况 2
-    if (node.status() === NodeStatusEnum.unmount) {
-      if (!node.instance.state.preserve) {
-        // TODO 这里重置的状态可能需要调整
-        node.instance.model((state) => ({
-          ...state,
-          value: undefined,
-          errors: [],
-          validateStatus: ValidateStatus.default,
-        }));
-      }
-      pushChild();
-      return true;
-    }
-    return false;
-  };
-
-  const dealWithSameNameNode = (n: string) => {
-    const sameNameNodes = findSameNameSiblingNode(n);
-    if (
-      sameNameNodes.length > 1
-      || (sameNameNodes.length === 1 && !Object.is(sameNameNodes[0], node))
-    ) {
-      const sameNameNode = sameNameNodes.find((t) => !Object.is(t, node));
-      resetSameNameNodeListeners();
-      // 同步状态
-      node.instance.model(sameNameNode.instance.model());
-      const listener_1 = node.instance.model.onChange((state) => {
-        sameNameNode.instance.model(state);
-      });
-      const listener_2 = sameNameNode.instance.model.onChange((state) => {
-        node.instance.model(state);
-      });
-      const listener_3 = sameNameNode.status.onChange((nodeStatus) => {
-        if (nodeStatus === NodeStatusEnum.unmount) {
-          dealWithSameNameNode(node.name);
-        }
-      });
-
-      listenersRef.current.push(listener_1, listener_2, listener_3);
+      // 都不解绑，由消费方管理
+      // unsubscribe([node.instance.model]);
+      // unsubscribe([node.status]);
     }
   };
 
@@ -391,6 +322,10 @@ const useNode = <V>(
                 // 和取值逻辑保持一致，遇到 form 节点不往下校验
                 if (nodeHelper.isForm(n.type)) {
                   return [false, true];
+                }
+                // 是否跳过校验
+                if (nodeHelper.skipValidate(node)) {
+                  return [true, true];
                 }
                 const errorPromise = nodeHelper.execValidator(n, node);
                 errors.push(errorPromise);
@@ -440,7 +375,19 @@ const useNode = <V>(
     } else {
       const formNode = nodeHelper.findNearlyParentFormNode(node);
       node.instance.validate = async () => {
-        return nodeHelper.execValidator(node, formNode);
+        if (nodeHelper.skipValidate(node)) {
+          return node.instance?.state?.value;
+        }
+        return new Promise((resolve, reject) => {
+          nodeHelper.execValidator(node, formNode).then((data) => {
+            if (data?.validateStatus === ValidateStatus.success) {
+              resolve(node.instance?.state?.value);
+            } else {
+              reject(data);
+              node.scrollToField(data?.node?.id);
+            }
+          });
+        });
       };
     }
   }, [state]);
@@ -453,33 +400,48 @@ const useNode = <V>(
     node.instance?.validate?.();
   }, [state?.value]);
 
-  useEffect(() => {
+  useUpdateEffect(() => {
     if (node.status() === NodeStatusEnum.unmount) return;
     if (node.status() === NodeStatusEnum.mount) {
       nodeDetach();
     }
-    pushChild();
+    pushChild(SearchAction.node_position_change);
   }, [parentNode]);
 
-  useEffect(() => {
+  useUpdateEffect(() => {
     // state 控制显示/隐藏
     if (!state?.visible) {
       visibleOrUnmountNodeDetach();
       return;
     }
-    nodePush();
+    // 出现 unmount 节点只可能有两种可能：
+    // 1. 组件节点卸载 2. visible 为 false
+    // 情况 1，unmount 的节点不会在一个组件里面出现，因为组件已经卸载了，不存在执行环境了
+    // 情况 2，unmount 的节点则可能出现在同一个组件中，当组件 visible 变为 true 时，则会重入节点。
+    // 下面的情况属于 情况 2
+    if (node.status() === NodeStatusEnum.unmount) {
+      if (!node.instance.state.preserve) {
+        // TODO 这里重置的状态可能需要调整
+        node.instance.model((state) => ({
+          ...state,
+          value: undefined,
+          errors: [],
+          validateStatus: ValidateStatus.default,
+        }));
+      }
+      pushChild(SearchAction.node_visible_change);
+    }
   }, [state?.visible]);
 
-  useEffect(() => {
-    if (firstRenderRef.current) {
-      firstRenderRef.current = false;
-      return;
-    }
+  useUpdateEffect(() => {
     noticeNodeConsumeSubscriber(SearchAction.node_name_change);
   }, [state?.name]);
 
   useEffect(() => {
+    node.mountedBy += 1;
+    pushChild(SearchAction.node_change);
     return () => {
+      node.mountedBy -= 1;
       visibleOrUnmountNodeDetach();
     };
   }, []);

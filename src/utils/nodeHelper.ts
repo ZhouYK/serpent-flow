@@ -427,6 +427,14 @@ class NodeHelper {
   getDefaultValueType = (type: NodeType) => {
     return this.isForm(type) ? NodeValueType.object : NodeValueType.string;
   };
+
+  /**
+   * 是否跳过校验
+   * @param node
+   */
+  skipValidate = (node: FNode<FieldState>) => {
+    return !node?.mountedBy || !node?.instance?.state?.visible;
+  }
 }
 
 export default new NodeHelper();

@@ -135,8 +135,10 @@ export type NodeStatus =
   | NodeStatusEnum.init;
 
 export enum SearchAction {
+  node_change = 'node_change',
   node_position_change = 'node_position_change',
   node_name_change = 'node_name_change',
+  node_visible_change = 'node_visible_change',
 }
 
 export interface FNode<P = any> {
@@ -151,6 +153,8 @@ export interface FNode<P = any> {
     (node: FNode, str: string, action: SearchAction) => void,
     Set<string>
   >;
+  // 被组件挂载的个数
+  mountedBy?: number;
   instance?: NodeInstance<P>;
   parent?: FNode<P> | null;
   sibling?: FNode<P> | null;
