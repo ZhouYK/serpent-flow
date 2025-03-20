@@ -186,7 +186,6 @@ const useNode = <V>(
       valueType: initState.valueType || nodeHelper.getDefaultValueType(type),
       instance: insRef.current,
       pushChild: (f: FNode) => {
-        if (node.status() === NodeStatusEnum.mount) return;
         nodeHelper.chainChildNode(f, node);
       },
       detach: () => {
@@ -324,7 +323,7 @@ const useNode = <V>(
                   return [false, true];
                 }
                 // 是否跳过校验
-                if (nodeHelper.skipValidate(node)) {
+                if (nodeHelper.skipValidate(n)) {
                   return [true, true];
                 }
                 const errorPromise = nodeHelper.execValidator(n, node);
@@ -384,7 +383,7 @@ const useNode = <V>(
               resolve(node.instance?.state?.value);
             } else {
               reject(data);
-              node.scrollToField(data?.node?.id);
+              formNode.scrollToField(data?.node?.id);
             }
           });
         });
