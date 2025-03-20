@@ -11,7 +11,6 @@ import type {
 import { NodeValueType, ValidateStatus } from '../interface';
 
 class NodeHelper {
-
   regex = {
     number: /^[0-9]+$/,
     empty: /^.+$/,
