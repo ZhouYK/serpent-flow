@@ -47,7 +47,7 @@ export class HooksHelper {
   // 节点的查询方法，是 useFieldInstance 的简化版本
   nodeQuery = (
     node: FNode,
-    path: FPath,
+    path?: FPath,
     options?: Omit<QueryFieldInstanceOptions, 'watch'>,
   ) => {
     const { context } = options || {};
@@ -68,12 +68,12 @@ export class HooksHelper {
       pathArr = parseResult?.pathArr;
       contextNode = parseResult?.newContext;
     }
-
     let target: FNode;
     if (!contextNode) {
       target = null;
-    } else if (!pathArr) {
-      target = null;
+    } else if (!pathArr?.length) {
+      // 没有 path，返回当前节点
+      target = node;
     } else {
       [target] = nodeHelper.findFieldNodes(contextNode, pathArr);
     }

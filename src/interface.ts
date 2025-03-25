@@ -95,7 +95,7 @@ export interface NodeInstance<P, V = any> {
   model: FemoModel<P>;
   validate: () => Promise<V>;
   query?: <T = V>(
-    path: FPath,
+    path?: FPath,
     options?: Omit<QueryFieldInstanceOptions, 'watch'>,
   ) => null | FieldInstance<T>;
 }

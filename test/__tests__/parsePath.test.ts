@@ -243,3 +243,15 @@ describe('path parse test', () => {
     expect(JSON.stringify(result.pathArr)).toBe(r_13);
   });
 });
+
+describe('relativePath', () => {
+  test('a', () => {
+    expect(parsePath.relativePath('a')).toBe(true);
+  });
+  test('./a', () => {
+    expect(parsePath.relativePath('./a')).toBe(true);
+  });
+  test('../a', () => {
+    expect(parsePath.relativePath('../a')).toBe(true);
+  });
+});

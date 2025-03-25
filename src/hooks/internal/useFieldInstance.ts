@@ -101,7 +101,7 @@ const useFieldInstance = <V = any>(
       if (!contextNode) return null;
       let tmpTarget = preState;
       // 没有 path，则返回所在的 node
-      if (!path) {
+      if (!(path?.length)) {
         tmpTarget = node;
       } else {
         // 可能会有多个同名节点，取第一个
