@@ -64,6 +64,7 @@ export interface FieldState<V = any, P = any> extends CommonState<V, P> {
   validateStatus?: ValidateStatus;
   initialValue?: V;
   rules?: SerpentRule<V>[];
+  description?: ReactElement | ReactNode;
   [index: string]: any;
 }
 

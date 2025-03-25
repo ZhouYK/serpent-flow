@@ -13,6 +13,7 @@ export const fieldStateKeysRecord: Record<keyof FieldState, keyof FieldState> = 
   initialValue: 'initialValue',
   disabled: 'disabled',
   className: 'className',
+  description: 'description',
   extendProps: 'extendProps',
 };
 
