@@ -111,7 +111,6 @@ export interface FieldProps<V = any, P = any> extends FieldState<V, P> {
     prevState: FieldState<V, P>,
     field: FieldInstance<V, P>,
   ) => void;
-  field?: FNode<FieldState<V, P>>;
   onChange?: (value: V) => void;
   [index: string]: any;
 }

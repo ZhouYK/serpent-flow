@@ -28,7 +28,6 @@ const Field: FC<FieldProps> = forwardRef<FieldInstance, FieldProps>(
     const {
       children,
       onFieldChange,
-      field,
       onChange: onValueChange,
       decorator,
     } = props;
@@ -62,7 +61,6 @@ const Field: FC<FieldProps> = forwardRef<FieldInstance, FieldProps>(
       instanceHelper.filterState(props, fieldStateKeys),
       'field',
       innerOnFieldChange,
-      field,
     );
 
     const fieldNodeRef = useRef(fieldNode);

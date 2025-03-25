@@ -100,9 +100,9 @@ const useFieldInstance = <V = any>(
     (preState) => {
       if (!contextNode) return null;
       let tmpTarget = preState;
-      // 没有 path，则返回 null
+      // 没有 path，则返回所在的 node
       if (!path) {
-        tmpTarget = null;
+        tmpTarget = node;
       } else {
         // 可能会有多个同名节点，取第一个
         // 效果会是一样的，因为同名节点会互相监听、互相同步状态
