@@ -6,6 +6,5 @@ node_modules/
 dist/
 coverage/
 ts/
-*/**/*.js
 es/
 cjs
